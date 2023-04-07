@@ -80,11 +80,14 @@ void solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pe
         /* search in the neighborhood space */
         for(int i=0; i<n-2; i++){  
             for(int j=i+2; j<n; j++){
+
+                /* calculate 2opt new cost */
                 int solution_cost = initial_cost+
                                     -distance[ route[i] ][ route[(i+1)%n] ]
                                     -distance[ route[j] ][ route[(j+1)%n] ]
                                     +distance[ route[i] ][ route[j] ]
                                     +distance[ route[(i+1)%n] ][ route[(j+1)%n] ];
+                /* found better solution */
                 if(solution_cost < curr_cost){
                     reverse_beg = (i+1)%n;
                     reverse_end = j;
