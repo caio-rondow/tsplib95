@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <climits>
 
 using namespace std;
 
@@ -29,7 +30,7 @@ vector<vector<int>> load_problem(const std::string&filename){
     std::string row;
     std::getline(fin,row);
     int n = stoi(row);
-    
+
     /* create matrix */
     vector<vector<int>> matrix(n,vector<int>(n));
     for(int i=0; i<n; i++){
@@ -43,50 +44,90 @@ vector<vector<int>> load_problem(const std::string&filename){
     return matrix;
 }
 
-/* calcula o custo inicial */
-int path_cost(const vector<int>&route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+/* recalculate all path cost */
+int total_path_cost(vector<int>route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int beg, int end, int n){
     int cost = 0;
     int src, tar;
-    
+
+    reverse(route.begin()+beg, route.begin()+end+1);
+
     for(int i=0; i<n; i++){
         src = route[i];
         tar = route[(i+1)%n];
-        cost += distance[src][tar];
+        cost += (distance[src][tar] + penalty[src][i]);
     }
 
     return cost;
 }
 
-void solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+vector<int> nearest_neighbor_heuristic(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
-    vector<int> route(n);
+	vector<int> route(n);
+	bool visited[n] = {false};
+
+	route[0] = 0;
+	visited[0] = true;
+
+	/* visit all src nodes */
+	for(int i=0; i<n; i++){
+		int nearest = INT_MAX;
+		int next=0;
+
+		/* visit all tar nodes */
+		for(int j=0; j<n; j++){
+
+			if(!visited[j]){
+				/* get nearest neighbor */
+				int cost = distance[i][j] + penalty[ route[i] ][i];
+				if(cost < nearest){
+					nearest = cost;
+					next = j;
+				}
+			}
+		}
+		/* visit next neighbor */
+		visited[next] = true;
+		route[(i+1)%n]=next;
+	}
+
+	return route;
+}
+
+int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+
+    //vector<int> route(n);
     bool isImproving=true;
 
     /* initial solution */
+	vector<int> route(n);
     for(int i=0; i<n; i++){
         route[i] = i;
     }
-    
+
+	//vector<int> route = nearest_neighbor_heuristic(distance, penalty, n);
+
     /* initial cost */
-    int initial_cost = path_cost(route,distance,penalty,n);
+    int initial_cost = total_path_cost(route,distance,penalty,0,-1,n);
     int curr_cost = initial_cost;
     int reverse_beg, reverse_end;
 
-    std::cout << "initial cost: " << initial_cost << "\n";
+    //std::cout << initial_cost << "\n";
+	return initial_cost;
+	//for(int i=0; i<n; i++){
+	//	cout << route[i] << " ";
+	//} cout << "\n";
+
     while(isImproving){
 
         isImproving=false;
-        
+
         /* search in the neighborhood space */
-        for(int i=0; i<n-2; i++){  
+        for(int i=0; i<n-2; i++){
             for(int j=i+2; j<n; j++){
 
                 /* calculate 2opt new cost */
-                int solution_cost = initial_cost+
-                                    -distance[ route[i] ][ route[(i+1)%n] ]
-                                    -distance[ route[j] ][ route[(j+1)%n] ]
-                                    +distance[ route[i] ][ route[j] ]
-                                    +distance[ route[(i+1)%n] ][ route[(j+1)%n] ];
+	        	int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
+
                 /* found better solution */
                 if(solution_cost < curr_cost){
                     reverse_beg = (i+1)%n;
@@ -105,16 +146,16 @@ void solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pe
     }
 
     cout << "best cost: " << curr_cost << "\n";
-    cout << "best route: ";
+    //cout << "best route: ";
     for(int i=0; i<n; i++){
-        cout << route[i] << " -> ";
+        cout << route[i]+1 << " ";
     }
     cout << "\n";
 }
 
 int main(int argc, char **argv){
 
-    /* read distance and penalty matrix */ 
+    /* read distance and penalty matrix */
     std::string problem_name = argv[1];
     std::string penalty_name = argv[2];
 
@@ -124,7 +165,7 @@ int main(int argc, char **argv){
     // print_matrix(distance, distance.size());
     // print_matrix(penalty, penalty.size());
 
-    solve_TSPP(distance, penalty, distance.size());
-
+    int ans = solve_TSPP(distance, penalty, distance.size());
+	cout << ans << "\n";
     return 0;
 }
