@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <climits>
+#include <chrono>
 
 using namespace std;
 
@@ -50,7 +51,7 @@ int total_path_cost(vector<int>route, const vector<vector<int>>&distance, const 
     int src, tar;
 
     reverse(route.begin()+beg, route.begin()+end+1);
-
+    
     for(int i=0; i<n; i++){
         src = route[i];
         tar = route[(i+1)%n];
@@ -96,10 +97,10 @@ vector<int> nearest_neighbor_heuristic(const vector<vector<int>>&distance, const
 int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
 	/* calculate new distance cost */
-	int dist_cost = -distance[beg][(beg+1)%n]
-					-distance[end][(end+1)%n]
-					+distance[beg][end]
-					+distance[(beg+1)%n][(end+1)%n];
+	int dist_cost = -distance[route[beg]][route[(beg+1)%n]]
+					-distance[route[end]][route[(end+1)%n]]
+					+distance[route[beg]][route[end]]
+					+distance[route[(beg+1)%n]][route[(end+1)%n]];
 
 	/* calculate new penalty cost */
 	int k = (beg+1)%n;
@@ -107,18 +108,18 @@ int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const 
 	for(int i=end; i>beg; i--){
 		pen_cost += (penalty[route[i]][k] - penalty[route[i]][i]);
 		k++;
-	}
+	} 
 
 	return initial_cost + dist_cost + pen_cost;
 }
 
 int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
-    //vector<int> route(n);
+    vector<int> route(n);
     bool isImproving=true;
+    int max_iterations=1000;
 
     /* initial solution */
-	vector<int> route(n);
     for(int i=0; i<n; i++){
         route[i] = i;
     }
@@ -130,12 +131,8 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
     int curr_cost = initial_cost;
     int reverse_beg, reverse_end;
 
-    //std::cout << initial_cost << "\n";
 	//return initial_cost;
-	//for(int i=0; i<n; i++){
-	//	cout << route[i] << " ";
-	//} cout << "\n";
-	cout << "initial cost: " << initial_cost << "\n";
+    auto start = std::chrono::high_resolution_clock::now();
     while(isImproving){
 
         isImproving=false;
@@ -145,10 +142,10 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
             for(int j=i+2; j<n; j++){
 
                 /* calculate 2opt new cost */
-	        	int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
-				//int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
-                cout << solution_cost << "\n";
-				/* found better solution */
+	        	// int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
+				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
+        				
+                /* found better solution */
                 if(solution_cost < curr_cost){
                     reverse_beg = (i+1)%n;
                     reverse_end = j;
@@ -163,16 +160,11 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
             reverse(route.begin()+reverse_beg, route.begin()+reverse_end+1);
             initial_cost = curr_cost;
         }
-		break;
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+    // std::cout << "Elapsed time: " << duration.count() << " seconds" << std::endl;
 
-    //cout << "best cost: " << curr_cost << "\n";
-    //cout << "best route: ";
-    //for(int i=0; i<n; i++){
-    //    cout << route[i]+1 << " ";
-    //}
-    //cout << "\n";
-	cout << "final cost: " << curr_cost << "\n";
 	return curr_cost;
 }
 
@@ -189,5 +181,6 @@ int main(int argc, char **argv){
     // print_matrix(penalty, penalty.size());
 
     int ans = solve_TSPP(distance, penalty, distance.size());
+    cout << ans << "\n";
     return 0;
 }
