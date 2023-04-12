@@ -61,7 +61,7 @@ int total_path_cost(vector<int>route, const vector<vector<int>>&distance, const 
     return cost;
 }
 
-vector<int> nearest_neighbor_heuristic(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+vector<int> nearest_neighbor_v1(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
 	vector<int> route(n);
 	bool visited[n] = {false};
@@ -94,6 +94,55 @@ vector<int> nearest_neighbor_heuristic(const vector<vector<int>>&distance, const
 	return route;
 }
 
+pair<int,int> find_nn(int v, int vpos, bool visited[], const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+
+	int nearest=INT_MAX;
+	int next=0;
+	for(int i=0; i<n; i++){
+		if(!visited[i]){
+			int cost = distance[v][i] + penalty[v][vpos]; // FALTA ADD PENALIDADE
+			if(cost < nearest){ 
+				next = i;
+				nearest = cost;
+			}
+		}
+	}
+	return make_pair(next,nearest);
+}
+
+vector<int> nearest_neighbor_v2(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+
+	vector<int> route;
+	bool visited[n] = {false};
+
+	/* set first city as 0 */
+	route.push_back(0);
+	visited[0]=true;
+
+	/* find the nearest city x from city 0 */
+	pair<int,int> next=find_nn(0,0,visited,distance,penalty,n);
+	route.push_back(next.first);
+	visited[next.first]=true;
+	int size=2;
+
+	/* find the nearest city x or z */
+	for(int i=2; i<n; i++){
+		pair<int,int> back = find_nn(route.back(),size-1,visited,distance,penalty,n);
+		pair<int,int> front= find_nn(route.front(),0,visited,distance,penalty,n);
+
+		if(back.second<front.second){
+			visited[back.first]=true;
+			route.push_back(back.first);
+			size++;
+		} else{
+			visited[front.first]=true;
+			route.insert(route.begin(),front.first);
+		}
+	}
+
+	return route;
+}
+
 int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
 	/* calculate new distance cost */
@@ -115,21 +164,27 @@ int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const 
 
 int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
-    vector<int> route(n);
+    //vector<int> route(n);
     bool isImproving=true;
     int max_iterations=1000;
 
     /* initial solution */
-    for(int i=0; i<n; i++){
-        route[i] = i;
-    }
+    //for(int i=0; i<n; i++){
+    //    route[i] = i;
+    //}
 
-	//vector<int> route = nearest_neighbor_heuristic(distance, penalty, n);
+	vector<int> route = nearest_neighbor_v1(distance, penalty, n);
+	//vector<int> route = nearest_neighbor_v2(distance, penalty, n);
 
     /* initial cost */
     int initial_cost = total_path_cost(route,distance,penalty,0,-1,n);
     int curr_cost = initial_cost;
     int reverse_beg, reverse_end;
+	
+	for(int i=0; i<n; i++){cout << route[i] << " ";}
+	cout << "\n";
+
+	return initial_cost;
 
 	//return initial_cost;
     auto start = std::chrono::high_resolution_clock::now();
@@ -144,7 +199,7 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
                 /* calculate 2opt new cost */
 	        	// int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
 				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
-        				
+
                 /* found better solution */
                 if(solution_cost < curr_cost){
                     reverse_beg = (i+1)%n;
