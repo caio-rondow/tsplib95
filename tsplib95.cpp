@@ -184,16 +184,14 @@ int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const 
 int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
     /* INITIAL SOLUTION */
-    // vector<int> route(n); iota(route.begin(), route.end(), 0);   // 0,1,2,3, ..., N
+    vector<int> route(n); iota(route.begin(), route.end(), 0);   // 0,1,2,3, ..., N
 	// vector<int> route = nearest_neighbor_v1(distance, n);     // GREEDY 1
-	vector<int> route = nearest_neighbor_v2(distance, n);     // GREEDY 2
+	// vector<int> route = nearest_neighbor_v2(distance, n);     // GREEDY 2
 
     /* INITIAL COST */
     int initial_cost = total_path_cost(route,distance,penalty,n);
     int curr_cost = initial_cost;
     int reverse_beg, reverse_end;
-
-    return initial_cost;
 
     /* LOCAL SEARCH */
     bool isImproving=true;
@@ -206,7 +204,6 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
             for(int j=i+2; j<n; j++){
 
                 /* calculate 2opt new cost */
-	        	// int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
 				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
 
                 /* found better solution */
