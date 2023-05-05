@@ -1,0 +1,17 @@
+berlin52-cedo2	9568
+berlin52-cedo	9110
+berlin52-mix2	9612
+berlin52-mix	9290
+berlin52-zero	8980
+burma14-cedo	62
+burma14-mix	76
+burma14-zero	40
+dsj1000-zero	24630960
+gil262-zero	3208
+gr666-zero	4046
+st70-cedo2	976
+st70-cedo3	1102
+st70-cedo	897
+st70-mix2	1408
+st70-mix	1173
+st70-zero	830

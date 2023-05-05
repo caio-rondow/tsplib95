@@ -193,6 +193,8 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
     int curr_cost = initial_cost;
     int reverse_beg, reverse_end;
 
+	// return initial_cost;
+
     /* LOCAL SEARCH */
     bool isImproving=true;
     while(isImproving){
