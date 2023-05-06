@@ -227,7 +227,7 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
     }
     end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-    std::cout << "Execution time: " << duration.count() << " seconds." << std::endl;
+    // std::cout << "Execution time: " << duration.count() << " seconds." << std::endl;
 
 	return curr_cost;
 }

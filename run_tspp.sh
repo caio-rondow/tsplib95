@@ -1,6 +1,6 @@
 #!/bin/bash
 
-g++ tsplib95.cpp -o tspp.out # -O3
+g++ tsplib95.cpp -o tspp.out -O3
 
 for DISTANCE_FILE in distance/*.txt; do
 	# Catch distance file basename
