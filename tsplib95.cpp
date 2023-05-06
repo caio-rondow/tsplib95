@@ -194,7 +194,8 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
     int reverse_beg, reverse_end;
 
 	// return initial_cost;
-
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+    start = std::chrono::high_resolution_clock::now();
     /* LOCAL SEARCH */
     bool isImproving=true;
     while(isImproving){
@@ -224,6 +225,9 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
             initial_cost = curr_cost;
         }
     }
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Execution time: " << duration.count() << " seconds." << std::endl;
 
 	return curr_cost;
 }
@@ -241,6 +245,6 @@ int main(int argc, char **argv){
     // print_matrix(penalty, penalty.size());
 
     int ans = solve_TSPP(distance, penalty, distance.size());
-    cout << ans << "\n";
+    // cout << ans << "\n";
     return 0;
 }
