@@ -245,6 +245,6 @@ int main(int argc, char **argv){
     // print_matrix(penalty, penalty.size());
 
     int ans = solve_TSPP(distance, penalty, distance.size());
-    // cout << ans << "\n";
+    cout << ans << "\n";
     return 0;
 }
