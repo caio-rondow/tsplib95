@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <random>
+#include <map>
 
 #define EULER 2.7182818
 
@@ -168,10 +169,16 @@ int tannealing(const vector<vector<int>> &distance, const vector<vector<int>> &p
     mt19937 gen(rd());
     uniform_real_distribution<float> dis(0.0, 1.0);
 
+
     int reverse_beg = 0;
     int reverse_end = 0;
 
+    /* SOLUTION MEMORY*/
+    map<int,int> soulution_map;
+
     while (temp >= 0.0001){
+
+        int acc_count = 0;
 
         /* search in the neighborhood space */
         for(int i=0; i<n-2; i++){
@@ -183,20 +190,55 @@ int tannealing(const vector<vector<int>> &distance, const vector<vector<int>> &p
                 float randomNum = dis(gen);
 
                 /* found better solution */
-                if(solution_cost < curr_cost || randomNum < acc_probability((solution_cost - curr_cost),temp) ){
+                if(solution_cost < curr_cost || (randomNum < acc_probability((solution_cost - curr_cost),temp) && acc_count < 1000)){
+                    if(solution_cost > curr_cost) acc_count++; 
                     reverse_beg = (i+1)%n;
                     reverse_end = j;
                     curr_cost = solution_cost;
                     reverse(route.begin()+reverse_beg, route.begin()+reverse_end+1);
                     nswaps++;
-                }else{
-
                 }
             }
         }
 
         temp = temperature(temp);
     }
+
+
+    // cout << "custo antes: " << curr_cost << "\n";
+    int initial_cost = curr_cost;
+    
+    bool isImproving=true;
+    while(isImproving){
+
+        isImproving=false;
+
+        /* search in the neighborhood space */
+        for(int i=0; i<n-2; i++){
+            for(int j=i+2; j<n; j++){
+
+                /* calculate 2opt new cost */
+	        	// int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
+				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
+
+                /* found better solution */
+                if(solution_cost < curr_cost){
+                    reverse_beg = (i+1)%n;
+                    reverse_end = j;
+                    curr_cost = solution_cost;
+                    isImproving = true;
+                }
+            }
+        }
+
+        /* set new best solution */
+        if(isImproving){
+            reverse(route.begin()+reverse_beg, route.begin()+reverse_end+1);
+            initial_cost = curr_cost;
+        }
+    }
+
+    // cout << "custo depois: " << curr_cost << "\n";
 
     return curr_cost;
 }
@@ -214,18 +256,20 @@ int main(int argc, char **argv)
     vector<vector<int>> distance = load_problem(problem_name);
     vector<vector<int>> penalty = load_problem(penalty_name);
 
-    // int times = 100;
-    // while(times--){
-    //     int ans = annealing(distance,penalty,distance.size());
-    //     if(ans == 30){
-    //         cout << "BEST! " << ans << "\n";
-    //         break;
-    //     } else{
-    //         cout << "ans.: " << ans << "\n";
-    //     } 
-    // }
+    int times = 100;
+    int ans = INT32_MAX;
+    int n = distance.size();
+    while(times--){
+        ans = min(ans, tannealing(distance,penalty,n)); 
+    }
 
-    cout << annealing(distance, penalty, distance.size());
+    times = 100;
+    int ans2 = INT32_MAX;
+    while(times--){
+        ans2 = min(ans2, annealing(distance,penalty,n)); 
+    }
+
+    cout << ans << " " << ans2 << "\n";
 
     return 0;
 }
