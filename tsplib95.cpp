@@ -4,12 +4,10 @@
 #include <vector>
 #include <algorithm>
 #include <climits>
-#include <numeric>
 #include <chrono>
 
 using namespace std;
 
-/*OK*/
 void print_matrix(const vector<vector<int>>&matrix, int n){
     std::cout << n << "\n";
     for(int i=0; i<n; i++){
@@ -20,7 +18,6 @@ void print_matrix(const vector<vector<int>>&matrix, int n){
     }
 }
 
-/*OK*/
 vector<vector<int>> load_problem(const std::string&filename){
 
     /* open file */
@@ -48,10 +45,12 @@ vector<vector<int>> load_problem(const std::string&filename){
     return matrix;
 }
 
-/*OK*/
-int total_path_cost(vector<int>route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
+/* recalculate all path cost */
+int total_path_cost(vector<int>route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int beg, int end, int n){
     int cost = 0;
     int src, tar;
+
+    reverse(route.begin()+beg, route.begin()+end+1);
 
     for(int i=0; i<n; i++){
         src = route[i];
@@ -62,31 +61,27 @@ int total_path_cost(vector<int>route, const vector<vector<int>>&distance, const 
     return cost;
 }
 
-/*OK*/
 vector<int> nearest_neighbor_v1(const vector<vector<int>>&distance, int n){
 
 	vector<int> route(n);
 	bool visited[n] = {false};
+
+	route[0]   = 0;
+	visited[0] = true;
     int current_city = 0;
-	
-    route[0] = current_city;
-	visited[current_city] = true;
 
 	/* visit all src nodes */
 	for(int i=0; i<n; i++){
 		int nearest = INT_MAX;
-		int next_city = 0;
+		int next_city=0;
 
 		/* visit all tar nodes */
 		for(int j=0; j<n; j++){
-
-			if(!visited[j]){
-				/* get nearest neighbor */
-				int cost = distance[current_city][j];
-				if(cost < nearest){
-					nearest = cost;
-					next_city = j;
-				}
+            /* get nearest neighbor */
+            int cost = distance[current_city][j];
+			if(!visited[j] && cost < nearest){
+                nearest = cost;
+                next_city = j;		
 			}
 		}
 		/* visit next neighbor */
@@ -99,67 +94,90 @@ vector<int> nearest_neighbor_v1(const vector<vector<int>>&distance, int n){
 }
 
 vector<int> nearest_neighbor_v2(const vector<vector<int>>&distance, int n){
-    
-    vector<int> route;
-    vector<bool> visited(n,false);
-    int start=0;
 
-    /* start at city 0 */
-    route.push_back(0);
+    // init
+    vector<int> route;
+    bool visited[n] = {false};
+
+    /* start with city 0 */
+    route.insert(route.begin(),0);
     visited[0] = true;
 
-    /* find city x, nearest of city 0 */
-    int next_city = -1;
-    int nearest   = INT_MAX;
-    for(int i=0; i<n; i++){
-        if(!visited[i] && distance[0][i] < nearest){
-            nearest = distance[0][i];
-            next_city = i;
+    /* find x nearest city of 0 */
+    int nearest = INT_MAX;
+    int next_city = 0;
+    for(int j=0; j<n; j++){
+        int cost = distance[0][j];
+        if(!visited[j] && cost < nearest){
+            next_city = j;
+            nearest   = cost;
         }
     }
-    route.push_back(next_city);
+    route.insert(route.end(), next_city);
     visited[next_city] = true;
 
     /* 
-        find city y, nearest of city at begin or
-        find city z, nearest of city at end 
+        find city y the nearest of city x or 
+        city z nearest of city 0 
     */
     for(int i=2; i<n; i++){
-        
-        next_city = -1;
-        nearest   = INT_MAX;
-        bool in_front = false;
+        nearest = INT_MAX;
+        bool add_front = false;
 
         for(int j=0; j<n; j++){
             
-            int cost_back  = distance[route.back()][j];
-            int cost_front = distance[route.front()][j];
+            if(!visited[j]){
 
-            if(!visited[j] && (cost_back < nearest || cost_front < nearest)){
+                int cost_back  = distance[route.back()][j];
+                int cost_front = distance[route.front()][j];
 
-                if(cost_back < cost_front){
-                    in_front = false;
-                    nearest  = cost_back;
-                } else{
-                    in_front = true;
-                    nearest  = cost_front;
+                /* add at the back */
+                if(cost_back < cost_front && cost_back < nearest){
+                    nearest   = cost_back;
+                    next_city = j;
+                    add_front = false;
+                } else if(cost_front < cost_back && cost_front < nearest){ /* add at front */
+                    nearest   = cost_front;
+                    next_city = j;
+                    add_front = true;
                 }
-                next_city = j;
             }
         }
 
         visited[next_city] = true;
-        if(in_front){
-            start++;
+        if(add_front){
             route.insert(route.begin(), next_city);
-        } else{
+        }
+        else
             route.insert(route.end(), next_city);
+    }
+
+    /* start from city 0 */
+    int start=0;
+
+    for(int i=0; i<n; i++){
+        if(route[i]==0){
+            start=i;
+            break;
         }
     }
 
-    rotate(route.begin(), route.begin()+start, route.end());
+    vector<int> front; 
+    front = vector<int>( route.begin()+start, route.end() );
+    
+    vector<int> back; 
+    back = vector<int>( route.begin(), route.begin()+start );
+    
+    vector<int> final_route;
+    for(auto &f:front){
+        final_route.push_back(f);
+    }
 
-    return route;
+    for(auto &b:back){
+        final_route.push_back(b);
+    }
+
+    return final_route;
 }
 
 int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
@@ -184,18 +202,22 @@ int evaluate(int initial_cost, int beg, int end, const vector<int>&route, const 
 int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int n){
 
     /* INITIAL SOLUTION */
-    vector<int> route(n); iota(route.begin(), route.end(), 0);   // 0,1,2,3, ..., N
-	// vector<int> route = nearest_neighbor_v1(distance, n);     // GREEDY 1
-	// vector<int> route = nearest_neighbor_v2(distance, n);     // GREEDY 2
+    //vector<int> route(n);   ADD 1234567...N                // TRIVIAL
+	vector<int> route = nearest_neighbor_v1(distance, n);  // GREEDY 1
+	// vector<int> route = nearest_neighbor_v2(distance, n);    // GREEDY 2
 
     /* INITIAL COST */
-    int initial_cost = total_path_cost(route,distance,penalty,n);
+    int initial_cost = total_path_cost(route,distance,penalty,0,-1,n);
     int curr_cost = initial_cost;
     int reverse_beg, reverse_end;
 
-	// return initial_cost;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
-    start = std::chrono::high_resolution_clock::now();
+    // for(int i=0; i<n; i++)
+    //     cout << route[i] << " ";
+    // cout << "\n";
+ 
+    // greedy2
+    // return initial_cost;
+
     /* LOCAL SEARCH */
     bool isImproving=true;
     while(isImproving){
@@ -207,6 +229,7 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
             for(int j=i+2; j<n; j++){
 
                 /* calculate 2opt new cost */
+	        	// int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
 				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
 
                 /* found better solution */
@@ -225,9 +248,6 @@ int solve_TSPP(const vector<vector<int>>&distance, const vector<vector<int>>&pen
             initial_cost = curr_cost;
         }
     }
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    // std::cout << "Execution time: " << duration.count() << " seconds." << std::endl;
 
 	return curr_cost;
 }
