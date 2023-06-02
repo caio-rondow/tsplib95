@@ -2,12 +2,12 @@
 
 g++ annealing.cpp -o tspp.out -O3
 
+echo "Instance, Cost, Time(s)"
 for DISTANCE_FILE in distance/*.txt; do
 	# Catch distance file basename
 	basename="$(basename -- $DISTANCE_FILE)"
 	IFS='.' read -a strarr <<< "$basename"
 	filename="${strarr[0]}"
-
 	# for each problem, run all tspp's
 	for PENALTY_FILE in penalty/$filename*; do
 		basename="$(basename -- $PENALTY_FILE)"

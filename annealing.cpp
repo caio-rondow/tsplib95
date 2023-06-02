@@ -104,6 +104,43 @@ float acc_probability(int deltaC, double temp)
     // return (1.0 / ( 1.0 + exp(deltaC / 1000.0)) );
 }
 
+int local_search(vector<int>&route,const vector<vector<int>>&distance, const vector<vector<int>>&penalty, int curr_cost, int best_i, int best_j, int n){
+
+    int initial_cost = curr_cost;
+    int reverse_beg  = best_i;
+    int reverse_end  = best_j;
+    bool isImproving=true;
+    while(isImproving){
+
+        isImproving=false;
+
+        /* search in the neighborhood space */
+        for(int i=0; i<n-2; i++){
+            for(int j=i+2; j<n; j++){
+
+                /* calculate 2opt new cost */
+				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
+
+                /* found better solution */
+                if(solution_cost < curr_cost){
+                    reverse_beg = (i+1)%n;
+                    reverse_end = j;
+                    curr_cost = solution_cost;
+                    isImproving = true;
+                }
+            }
+        }
+
+        /* set new best solution */
+        if(isImproving){
+            reverse(route.begin()+reverse_beg, route.begin()+reverse_end+1);
+            initial_cost = curr_cost;
+        }
+    }
+
+    return curr_cost;
+}
+
 int annealing(const vector<vector<int>> &distance, const vector<vector<int>> &penalty, int n)
 {
 
@@ -149,103 +186,12 @@ int annealing(const vector<vector<int>> &distance, const vector<vector<int>> &pe
         temp = temperature(temp);
     }
 
-    return curr_cost;
-}
-
-int tannealing(const vector<vector<int>> &distance, const vector<vector<int>> &penalty, int n)
-{
-
-    /* RANDOM INITIAL SOLUTION */
-    vector<int> route(n);
-    iota(route.begin(), route.end(), 0);
-
-    /* INITIAL COST */
-    int curr_cost = total_path_cost(route, distance, penalty, n);
-    double temp = n >= 666 ? 100.0:1000.0;
-    int nswaps = 0;
-
-    /* RANDOM VALUE*/
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_real_distribution<float> dis(0.0, 1.0);
-
-
-    int reverse_beg = 0;
-    int reverse_end = 0;
-
-    /* SOLUTION MEMORY*/
-    map<int,int> soulution_map;
-
-    while (temp >= 0.0001){
-
-        int acc_count = 0;
-
-        /* search in the neighborhood space */
-        for(int i=0; i<n-2; i++){
-            for(int j=i+2; j<n; j++){
-
-                /* calculate 2opt new cost */
-				int solution_cost = evaluate(curr_cost,i,j,route,distance,penalty,n);
-
-                float randomNum = dis(gen);
-
-                /* found better solution */
-                if(solution_cost < curr_cost || (randomNum < acc_probability((solution_cost - curr_cost),temp) && acc_count < 1000)){
-                    if(solution_cost > curr_cost) acc_count++; 
-                    reverse_beg = (i+1)%n;
-                    reverse_end = j;
-                    curr_cost = solution_cost;
-                    reverse(route.begin()+reverse_beg, route.begin()+reverse_end+1);
-                    nswaps++;
-                }
-            }
-        }
-
-        temp = temperature(temp);
-    }
-
-
-    // cout << "custo antes: " << curr_cost << "\n";
-    int initial_cost = curr_cost;
-    
-    bool isImproving=true;
-    while(isImproving){
-
-        isImproving=false;
-
-        /* search in the neighborhood space */
-        for(int i=0; i<n-2; i++){
-            for(int j=i+2; j<n; j++){
-
-                /* calculate 2opt new cost */
-	        	// int solution_cost = total_path_cost(route, distance, penalty, (i+1)%n, j, n);
-				int solution_cost = evaluate(initial_cost,i,j,route,distance,penalty,n);
-
-                /* found better solution */
-                if(solution_cost < curr_cost){
-                    reverse_beg = (i+1)%n;
-                    reverse_end = j;
-                    curr_cost = solution_cost;
-                    isImproving = true;
-                }
-            }
-        }
-
-        /* set new best solution */
-        if(isImproving){
-            reverse(route.begin()+reverse_beg, route.begin()+reverse_end+1);
-            initial_cost = curr_cost;
-        }
-    }
-
-    // cout << "custo depois: " << curr_cost << "\n";
+    curr_cost = local_search(route, distance, penalty, curr_cost, reverse_beg, reverse_end, n);
 
     return curr_cost;
 }
 
-int main(int argc, char **argv)
-{
-
+int main(int argc, char **argv){
     srand(time(0));
 
     /* read distance and penalty matrix */
@@ -259,17 +205,16 @@ int main(int argc, char **argv)
     int times = 100;
     int ans = INT32_MAX;
     int n = distance.size();
-    while(times--){
-        ans = min(ans, tannealing(distance,penalty,n)); 
-    }
 
-    times = 100;
-    int ans2 = INT32_MAX;
+    auto start = std::chrono::system_clock::now();
     while(times--){
-        ans2 = min(ans2, annealing(distance,penalty,n)); 
+        ans = min(ans, annealing(distance,penalty,n)); 
     }
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = end - start;
 
-    cout << ans << " " << ans2 << "\n";
+    cout << ans << " ";
+    cout << elapsed.count()/1000000000.0 << "\n";
 
     return 0;
 }
