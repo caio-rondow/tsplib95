@@ -275,7 +275,7 @@ int main(int argc, char **argv){
     vector<vector<int>> distance = load_problem(problem_name);
     vector<vector<int>> penalty  = load_problem(penalty_name);
 
-    int times = 1;
+    int times = 100;
     int n = distance.size();
     int ans = INT32_MAX;
 

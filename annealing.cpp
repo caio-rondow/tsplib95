@@ -10,8 +10,6 @@
 #include <random>
 #include <map>
 
-#define EULER 2.7182818
-
 using namespace std;
 
 /*OK*/
