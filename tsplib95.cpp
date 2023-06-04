@@ -264,7 +264,15 @@ int main(int argc, char **argv){
     // print_matrix(distance, distance.size());
     // print_matrix(penalty, penalty.size());
 
+    auto start = std::chrono::system_clock::now();
+    
     int ans = solve_TSPP(distance, penalty, distance.size());
-    cout << ans << "\n";
+    
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = end - start;
+
+    cout << ans << " ";
+    cout << elapsed.count()/1000000000.0 << "\n";
+    
     return 0;
 }
